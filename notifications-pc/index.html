@@ -30,8 +30,8 @@
         const transpiled = Babel.transform(cleaned, { presets: ['react'] }).code;
 
         // Execute in a scope with React globals
-        const fn = new Function('React', 'useState', 'useRef', 'useEffect', transpiled + '\nreturn window.__NotificationCenter__;');
-        const NotificationCenter = fn(React, useState, useRef, useEffect);
+        const fn = new Function('React', 'ReactDOM', 'useState', 'useRef', 'useEffect', transpiled + '\nreturn window.__NotificationCenter__;');
+        const NotificationCenter = fn(React, ReactDOM, useState, useRef, useEffect);
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(React.createElement(NotificationCenter));

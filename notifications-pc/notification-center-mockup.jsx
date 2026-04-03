@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, createPortal } from "react";
+const { createPortal: _createPortal } = ReactDOM;
 
 const CHANNEL_OPTIONS = [
   { id: "email", label: "Email", icon: "\uD83D\uDCE7" },
@@ -238,6 +239,30 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
   const [startsOn, setStartsOn] = useState(item.startsOn || "");
   const [slackError, setSlackError] = useState(false);
   const popoverRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    function updatePos() {
+      if (anchorRef.current) {
+        const rect = anchorRef.current.getBoundingClientRect();
+        const popH = 420; // approximate max popover height
+        const spaceBelow = window.innerHeight - rect.bottom - 8;
+        if (spaceBelow < popH) {
+          // Open upward
+          setPos({ top: rect.top - popH - 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
+        } else {
+          setPos({ top: rect.bottom + 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
+        }
+      }
+    }
+    updatePos();
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [anchorRef]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -286,14 +311,14 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
       ref={popoverRef}
       style={{
         position: "absolute",
-        right: 0,
-        top: "calc(100% + 8px)",
+        top: pos.top,
+        left: pos.left,
         width: 300,
         background: "#fff",
         borderRadius: 12,
         border: "1px solid #e5e7eb",
         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-        zIndex: 50,
+        zIndex: 9999,
         padding: 0,
         overflow: "hidden",
       }}
@@ -699,26 +724,32 @@ export default function NotificationCenter() {
               borderRadius: 12,
               border: "1px solid #e5e7eb",
               opacity: muteAll ? 0.5 : 1,
-              maxHeight: 305,
-              overflowY: "auto",
+              position: "relative",
             }}
           >
-            {addedEvents.map((event, idx) => (
-              <NotificationRow
-                key={event.id}
-                event={event}
-                config={eventConfigs[event.id]}
-                isLast={idx === addedEvents.length - 1}
-                isPopoverOpen={openPopover === event.id}
-                onTogglePopover={() => setOpenPopover(openPopover === event.id ? null : event.id)}
-                onClosePopover={() => setOpenPopover(null)}
-                onSave={(updates) => updateNotification(event.id, updates)}
-                onRemove={() => removeEvent(event.id)}
-                onToggleMute={() => toggleMute(event.id)}
-                globalChannels={globalChannels}
-                muteAll={muteAll}
-              />
-            ))}
+            <div
+              style={{
+                maxHeight: 305,
+                overflowY: "auto",
+              }}
+            >
+              {addedEvents.map((event, idx) => (
+                <NotificationRow
+                  key={event.id}
+                  event={event}
+                  config={eventConfigs[event.id]}
+                  isLast={idx === addedEvents.length - 1}
+                  isPopoverOpen={openPopover === event.id}
+                  onTogglePopover={() => setOpenPopover(openPopover === event.id ? null : event.id)}
+                  onClosePopover={() => setOpenPopover(null)}
+                  onSave={(updates) => updateNotification(event.id, updates)}
+                  onRemove={() => removeEvent(event.id)}
+                  onToggleMute={() => toggleMute(event.id)}
+                  globalChannels={globalChannels}
+                  muteAll={muteAll}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -825,8 +856,9 @@ function NotificationRow({
         >
           &middot;&middot;&middot;
         </button>
-        {isPopoverOpen && (
-          <ConfigPopover item={item} anchorRef={menuRef} onClose={onClosePopover} onSave={onSave} globalChannels={globalChannels} />
+        {isPopoverOpen && _createPortal(
+          <ConfigPopover item={item} anchorRef={menuRef} onClose={onClosePopover} onSave={onSave} globalChannels={globalChannels} />,
+          document.body
         )}
       </div>
 
