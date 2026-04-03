@@ -611,12 +611,12 @@ export default function NotificationCenter() {
             style={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "flex-end",
               gap: 20,
               marginBottom: 20,
-              padding: "12px 16px",
-              background: "#fff",
+              padding: "10px 16px",
+              background: "transparent",
               borderRadius: 10,
-              border: "1px solid #e5e7eb",
             }}
           >
             {/* Mute all toggle */}
@@ -699,6 +699,8 @@ export default function NotificationCenter() {
               borderRadius: 12,
               border: "1px solid #e5e7eb",
               opacity: muteAll ? 0.5 : 1,
+              maxHeight: 305,
+              overflowY: "auto",
             }}
           >
             {addedEvents.map((event, idx) => (
