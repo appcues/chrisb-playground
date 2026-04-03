@@ -1,0 +1,880 @@
+import { useState, useRef, useEffect } from "react";
+
+const CHANNEL_OPTIONS = [
+  { id: "email", label: "Email", icon: "\uD83D\uDCE7" },
+  { id: "slack", label: "Slack", icon: "\uD83D\uDCAC" },
+];
+
+const SLACK_CHANNELS = [
+  "#appcues-alerts",
+  "#product",
+  "#customer-success",
+  "#engineering",
+  "#growth",
+  "#design",
+  "#general",
+  "#onboarding-team",
+];
+
+const CADENCE_OPTIONS = [
+  { id: "immediate", label: "Immediate" },
+  { id: "daily", label: "Daily digest" },
+  { id: "weekly", label: "Weekly digest" },
+  { id: "monthly", label: "Monthly digest" },
+];
+
+const ALL_EVENTS = [
+  { id: "campaign_drafted", label: "Campaign drafted" },
+  { id: "campaign_published", label: "Campaign published" },
+  { id: "campaign_unpublished", label: "Campaign unpublished" },
+  { id: "tactic_drafted", label: "Tactic drafted" },
+  { id: "tactic_published", label: "Tactic published" },
+  { id: "insight_issue", label: "New AI Insight (Issue) detected" },
+  { id: "insight_opportunity", label: "New AI Insight (Opportunity) detected" },
+  { id: "team_new_member", label: "New team member joined" },
+  { id: "team_role_changed", label: "Team member role changed" },
+  { id: "team_published", label: "Teammate published changes" },
+  { id: "nps_detractor", label: "NPS detractor response received" },
+  { id: "nps_neutral_promoter", label: "NPS neutral-to-promoter response received" },
+  { id: "survey_response", label: "Survey response received" },
+  { id: "install_issue", label: "Installation health alert" },
+  { id: "mau_limit", label: "Approaching MAU limit" },
+  { id: "integration_disconnect", label: "Integration disconnected" },
+  { id: "weekly_digest", label: "Weekly performance digest", cadenceLocked: true, defaultCadence: "weekly" },
+];
+
+/* ─── Icons ─── */
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M2.5 4h11M5.5 4V2.5a1 1 0 011-1h3a1 1 0 011 1V4m1.5 0v9a1 1 0 01-1 1h-6a1 1 0 01-1-1V4h8z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6.5 7v4M9.5 7v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MuteIcon({ muted }) {
+  if (muted) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2a4 4 0 014 4v2.5l1.3 1.3a.5.5 0 01-.35.85H3.05a.5.5 0 01-.35-.85L4 8.5V6a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6.5 11a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        <path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 2a4 4 0 014 4v2.5l1.3 1.3a.5.5 0 01-.35.85H3.05a.5.5 0 01-.35-.85L4 8.5V6a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6.5 11a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* Small inline mute icon for channel badges */
+function SmallMuteIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M8 2a4 4 0 014 4v2.5l1.3 1.3a.5.5 0 01-.35.85H3.05a.5.5 0 01-.35-.85L4 8.5V6a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6.5 11a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ─── Toggle switch ─── */
+function ToggleSwitch({ checked, onChange, size = "normal" }) {
+  const w = size === "small" ? 36 : 44;
+  const h = size === "small" ? 20 : 24;
+  const dot = size === "small" ? 16 : 18;
+  const onX = size === "small" ? 18 : 22;
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        minWidth: w,
+        height: h,
+        borderRadius: h / 2,
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+        background: checked ? "#5c50d2" : "#d1d5db",
+        transition: "background 200ms",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          width: dot,
+          height: dot,
+          borderRadius: dot / 2,
+          background: "#fff",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+          transform: checked ? `translateX(${onX}px)` : "translateX(2px)",
+          transition: "transform 200ms ease",
+        }}
+      />
+    </button>
+  );
+}
+
+/* ─── Mute Channel dropdown with checkboxes ─── */
+function MuteChannelDropdown({ globalChannels, onToggle }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const anyMuted = !globalChannels.email || !globalChannels.slack;
+
+  return (
+    <div style={{ position: "relative" }} ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "6px 14px",
+          fontSize: 13,
+          fontWeight: 500,
+          color: anyMuted ? "#b45309" : "#6b7280",
+          background: anyMuted ? "#fffbeb" : "#fff",
+          border: anyMuted ? "1px solid #fef3c7" : "1px solid #e5e7eb",
+          borderRadius: 8,
+          cursor: "pointer",
+          transition: "all 150ms",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Mute Channel
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 150ms" }}>
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            zIndex: 20,
+            padding: "6px 0",
+            minWidth: 180,
+          }}
+        >
+          {CHANNEL_OPTIONS.map((ch) => {
+            const isMuted = !globalChannels[ch.id];
+            return (
+              <button
+                key={ch.id}
+                onClick={() => onToggle(ch.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 14px",
+                  width: "100%",
+                  border: "none",
+                  background: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  color: "#374151",
+                  textAlign: "left",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+              >
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 4,
+                    border: isMuted ? "none" : "2px solid #d1d5db",
+                    background: isMuted ? "#5c50d2" : "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {isMuted && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 14 }}>{ch.icon}</span>
+                  Mute {ch.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Popover for configuring channels + cadence ─── */
+function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
+  const [selectedChannels, setSelectedChannels] = useState([...item.channels]);
+  const [selectedCadence, setSelectedCadence] = useState(item.cadence);
+  const [slackChannels, setSlackChannels] = useState([...(item.slackChannels || [])]);
+  const [startsOn, setStartsOn] = useState(item.startsOn || "");
+  const [slackError, setSlackError] = useState(false);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target)
+      ) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose, anchorRef]);
+
+  const toggleChannel = (chId) => {
+    setSelectedChannels((prev) => {
+      const next = prev.includes(chId) ? prev.filter((c) => c !== chId) : [...prev, chId];
+      if (chId === "slack" && !next.includes("slack")) {
+        setSlackChannels([]);
+        setSlackError(false);
+      }
+      return next;
+    });
+  };
+
+  const handleSave = () => {
+    // Require Slack channel if Slack is selected
+    if (selectedChannels.includes("slack") && slackChannels.length === 0) {
+      setSlackError(true);
+      return;
+    }
+    onSave({
+      channels: selectedChannels,
+      cadence: selectedCadence,
+      slackChannels,
+      startsOn: (selectedCadence === "weekly" || selectedCadence === "monthly") ? startsOn : "",
+    });
+  };
+
+  const showStartsOn = selectedCadence === "weekly" || selectedCadence === "monthly";
+
+  return (
+    <div
+      ref={popoverRef}
+      style={{
+        position: "absolute",
+        right: 0,
+        top: "calc(100% + 8px)",
+        width: 300,
+        background: "#fff",
+        borderRadius: 12,
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+        zIndex: 50,
+        padding: 0,
+        overflow: "hidden",
+      }}
+    >
+      {/* Channels section */}
+      <div style={{ padding: "16px 16px 12px" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+          Channels
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {CHANNEL_OPTIONS.map((ch) => {
+            const isSelected = selectedChannels.includes(ch.id);
+            const isGloballyMuted = globalChannels && !globalChannels[ch.id];
+            return (
+              <button
+                key={ch.id}
+                onClick={() => toggleChannel(ch.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8,
+                  border: isSelected ? "1.5px solid #5c50d2" : "1.5px solid #e5e7eb",
+                  background: isSelected ? "#f5f3ff" : "#fff",
+                  cursor: "pointer",
+                  transition: "all 150ms",
+                }}
+              >
+                <span style={{ fontSize: 15, width: 22, textAlign: "center" }}>{ch.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: isSelected ? "#5c50d2" : "#374151", flex: 1, textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
+                  {ch.label}
+                  {isGloballyMuted && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#b45309", fontWeight: 400 }}>
+                      <SmallMuteIcon /> muted
+                    </span>
+                  )}
+                </span>
+                {isSelected && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8.5L6.5 12L13 4" stroke="#5c50d2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Slack channel picker — required when Slack is selected */}
+        {selectedChannels.includes("slack") && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+              Slack channel
+              <span style={{ color: "#ef4444", fontSize: 13, lineHeight: 1 }}>*</span>
+            </div>
+            <select
+              value={slackChannels[0] || ""}
+              onChange={(e) => {
+                setSlackChannels(e.target.value ? [e.target.value] : []);
+                if (e.target.value) setSlackError(false);
+              }}
+              style={{
+                width: "100%", padding: "6px 10px", fontSize: 13,
+                border: slackError ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+                borderRadius: 6, background: "#fff",
+                color: slackChannels[0] ? "#374151" : "#9ca3af",
+                outline: "none", cursor: "pointer",
+              }}
+            >
+              <option value="">Select a channel...</option>
+              {SLACK_CHANNELS.map((ch) => (
+                <option key={ch} value={ch} style={{ color: "#374151" }}>{ch}</option>
+              ))}
+            </select>
+            {slackError && (
+              <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>
+                Please select a Slack channel
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div style={{ height: 1, background: "#f3f4f6" }} />
+
+      {/* Cadence section */}
+      <div style={{ padding: "12px 16px 16px" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+          Delivery
+        </div>
+        {item.cadenceLocked ? (
+          <div style={{ padding: "8px 12px", borderRadius: 8, background: "#f9fafb", border: "1.5px solid #e5e7eb", fontSize: 13, color: "#6b7280", display: "flex", alignItems: "center", gap: 6 }}>
+            {CADENCE_OPTIONS.find((c) => c.id === item.cadence)?.label}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M3 4h4v2.5a2 2 0 01-4 0V4z" stroke="#9ca3af" strokeWidth="1.2" fill="none" />
+              <rect x="2" y="3" width="6" height="3" rx="1" stroke="#9ca3af" strokeWidth="1.2" fill="none" />
+            </svg>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {CADENCE_OPTIONS.map((c) => {
+              const isSelected = selectedCadence === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCadence(c.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", borderRadius: 8,
+                    border: isSelected ? "1.5px solid #5c50d2" : "1.5px solid transparent",
+                    background: isSelected ? "#f5f3ff" : "transparent",
+                    cursor: "pointer", transition: "all 150ms",
+                  }}
+                >
+                  <div style={{ width: 16, height: 16, borderRadius: 8, border: isSelected ? "5px solid #5c50d2" : "2px solid #d1d5db", boxSizing: "border-box", flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: isSelected ? "#5c50d2" : "#374151", textAlign: "left" }}>{c.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Starts on date picker for weekly/monthly */}
+        {showStartsOn && !item.cadenceLocked && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+              Starts on
+            </div>
+            <input
+              type="date"
+              value={startsOn}
+              onChange={(e) => setStartsOn(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                fontSize: 13,
+                border: "1px solid #e5e7eb",
+                borderRadius: 6,
+                background: "#fff",
+                color: startsOn ? "#374151" : "#9ca3af",
+                outline: "none",
+                cursor: "pointer",
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <button onClick={onClose} style={{ padding: "6px 16px", fontSize: 13, fontWeight: 500, color: "#6b7280", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer" }}>
+          Cancel
+        </button>
+        <button onClick={handleSave} style={{ padding: "6px 16px", fontSize: 13, fontWeight: 600, color: "#fff", background: "#5c50d2", border: "none", borderRadius: 6, cursor: "pointer" }}>
+          OK
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Summary pills shown on each row ─── */
+function ConfigSummary({ channels, cadence, muted, globalChannels, slackChannels }) {
+  if (muted) {
+    return (
+      <span style={{ fontSize: 12, color: "#b45309", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+        Muted
+      </span>
+    );
+  }
+
+  if (channels.length === 0) {
+    return (
+      <span style={{ fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>Off</span>
+    );
+  }
+
+  const cadenceLabel = cadence === "immediate" ? "Immediate" : cadence === "daily" ? "Daily" : cadence === "weekly" ? "Weekly" : "Monthly";
+  const cadenceColors = {
+    immediate: { text: "#059669", bg: "#ecfdf5", border: "#d1fae5" },
+    daily: { text: "#5c50d2", bg: "#eef2ff", border: "#e0e7ff" },
+    weekly: { text: "#b45309", bg: "#fffbeb", border: "#fef3c7" },
+    monthly: { text: "#6b7280", bg: "#f9fafb", border: "#e5e7eb" },
+  };
+  const cc = cadenceColors[cadence] || cadenceColors.daily;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", fontSize: 12, fontWeight: 600, color: cc.text, background: cc.bg, border: "1px solid " + cc.border, borderRadius: 5 }}>
+        {cadenceLabel}
+      </span>
+      {channels.map((chId) => {
+        const ch = CHANNEL_OPTIONS.find((c) => c.id === chId);
+        const isMuted = globalChannels && !globalChannels[chId];
+        const slackName = chId === "slack" && slackChannels && slackChannels[0] ? slackChannels[0] : null;
+        return (
+          <span
+            key={chId}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 3,
+              padding: "2px 8px",
+              fontSize: 12,
+              fontWeight: 500,
+              color: isMuted ? "#b45309" : "#374151",
+              background: isMuted ? "#fffbeb" : "#f3f4f6",
+              border: isMuted ? "1px solid #fef3c7" : "1px solid transparent",
+              borderRadius: 5,
+            }}
+          >
+            {isMuted && <SmallMuteIcon />}
+            <span style={{ fontSize: 11 }}>{ch?.icon}</span>
+            {ch?.label}{slackName && <span style={{ fontSize: 11, color: isMuted ? "#b45309" : "#6b7280", fontWeight: 400 }}>{" "}{slackName}</span>}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Main component ─── */
+export default function NotificationCenter() {
+  const [eventConfigs, setEventConfigs] = useState(() => {
+    const configs = {};
+    ALL_EVENTS.forEach((e) => {
+      configs[e.id] = {
+        channels: ["email"],
+        cadence: e.defaultCadence || "immediate",
+        cadenceLocked: e.cadenceLocked || false,
+        slackChannels: [],
+        startsOn: "",
+        muted: false,
+      };
+    });
+    return configs;
+  });
+
+  const [addedIds, setAddedIds] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [openPopover, setOpenPopover] = useState(null);
+  const [muteAll, setMuteAll] = useState(false);
+  const [globalChannels, setGlobalChannels] = useState({ email: true, slack: true });
+
+  const toggleGlobalChannel = (chId) => {
+    setGlobalChannels((prev) => ({ ...prev, [chId]: !prev[chId] }));
+    setSaved(false);
+  };
+
+  const updateNotification = (id, updates) => {
+    setEventConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...updates } }));
+    setSaved(false);
+    setOpenPopover(null);
+  };
+
+  const toggleMute = (id) => {
+    setEventConfigs((prev) => ({ ...prev, [id]: { ...prev[id], muted: !prev[id].muted } }));
+    setSaved(false);
+  };
+
+  const addEvent = () => {
+    if (!selectedEvent) return;
+    setAddedIds((prev) => [...prev, selectedEvent]);
+    setEventConfigs((prev) => ({
+      ...prev,
+      [selectedEvent]: { ...prev[selectedEvent], channels: ["email"], cadence: "immediate", slackChannels: [], startsOn: "", muted: false },
+    }));
+    setSelectedEvent("");
+    setSaved(false);
+  };
+
+  const removeEvent = (id) => {
+    setAddedIds((prev) => prev.filter((eid) => eid !== id));
+    const original = ALL_EVENTS.find((e) => e.id === id);
+    setEventConfigs((prev) => ({
+      ...prev,
+      [id]: { channels: ["email"], cadence: original?.defaultCadence || "immediate", cadenceLocked: original?.cadenceLocked || false, slackChannels: [], startsOn: "", muted: false },
+    }));
+    setSaved(false);
+    setOpenPopover(null);
+  };
+
+  const availableEvents = ALL_EVENTS.filter((e) => !addedIds.includes(e.id));
+  const addedEvents = addedIds.map((id) => ALL_EVENTS.find((e) => e.id === id)).filter(Boolean);
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  return (
+    <div
+      style={{
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: "#f8f9fb",
+        minHeight: "100vh",
+        padding: "40px 20px",
+      }}
+    >
+      <div style={{ maxWidth: 880, margin: "0 auto" }}>
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
+              <rect width="28" height="28" rx="6" fill="#5c50d2" />
+              <path d="M8 10.5a1.5 1.5 0 013 0v7a1.5 1.5 0 01-3 0v-7zm4.5-2a1.5 1.5 0 013 0v11a1.5 1.5 0 01-3 0v-11zm4.5 4a1.5 1.5 0 013 0v5a1.5 1.5 0 01-3 0v-5z" fill="#fff" />
+            </svg>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", margin: 0 }}>Notification Preferences</h1>
+          </div>
+          <p style={{ color: "#6b7280", fontSize: 15, margin: 0, lineHeight: 1.5 }}>
+            Choose what to get notified about, pick your channels, and set the delivery cadence.
+          </p>
+        </div>
+
+        {/* Mute all + Mute channel controls — only shown when notifications exist */}
+        {addedEvents.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 20,
+              marginBottom: 20,
+              padding: "12px 16px",
+              background: "#fff",
+              borderRadius: 10,
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            {/* Mute all toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <ToggleSwitch checked={muteAll} onChange={setMuteAll} size="small" />
+              <span style={{ fontSize: 13, fontWeight: 600, color: muteAll ? "#b45309" : "#374151" }}>
+                Mute all notifications
+              </span>
+            </div>
+
+            {/* Separator */}
+            <div style={{ width: 1, height: 24, background: "#e5e7eb" }} />
+
+            {/* Mute channel dropdown */}
+            <MuteChannelDropdown globalChannels={globalChannels} onToggle={toggleGlobalChannel} />
+          </div>
+        )}
+
+        {/* Notify me when — dropdown + Add button */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 16,
+            opacity: muteAll ? 0.5 : 1,
+            pointerEvents: muteAll ? "none" : "auto",
+          }}
+        >
+          <label style={{ fontSize: 14, fontWeight: 600, color: "#374151", whiteSpace: "nowrap" }}>
+            Notify me when
+          </label>
+          <select
+            value={selectedEvent}
+            onChange={(e) => setSelectedEvent(e.target.value)}
+            disabled={muteAll}
+            style={{
+              flex: 1,
+              padding: "8px 12px",
+              fontSize: 14,
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              background: "#fff",
+              color: selectedEvent ? "#111827" : "#9ca3af",
+              outline: "none",
+              cursor: muteAll ? "not-allowed" : "pointer",
+              appearance: "auto",
+            }}
+          >
+            <option value="">Select an event...</option>
+            {availableEvents.map((e) => (
+              <option key={e.id} value={e.id}>{e.label}</option>
+            ))}
+          </select>
+          <button
+            onClick={addEvent}
+            disabled={!selectedEvent || muteAll}
+            style={{
+              padding: "8px 20px",
+              fontSize: 14,
+              fontWeight: 600,
+              color: selectedEvent && !muteAll ? "#fff" : "#9ca3af",
+              background: selectedEvent && !muteAll ? "#5c50d2" : "#f3f4f6",
+              border: selectedEvent && !muteAll ? "none" : "1px solid #e5e7eb",
+              borderRadius: 8,
+              cursor: selectedEvent && !muteAll ? "pointer" : "not-allowed",
+              transition: "all 150ms",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Add
+          </button>
+        </div>
+
+        {/* Added notification rows */}
+        {addedEvents.length > 0 && (
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+              opacity: muteAll ? 0.5 : 1,
+            }}
+          >
+            {addedEvents.map((event, idx) => (
+              <NotificationRow
+                key={event.id}
+                event={event}
+                config={eventConfigs[event.id]}
+                isLast={idx === addedEvents.length - 1}
+                isPopoverOpen={openPopover === event.id}
+                onTogglePopover={() => setOpenPopover(openPopover === event.id ? null : event.id)}
+                onClosePopover={() => setOpenPopover(null)}
+                onSave={(updates) => updateNotification(event.id, updates)}
+                onRemove={() => removeEvent(event.id)}
+                onToggleMute={() => toggleMute(event.id)}
+                globalChannels={globalChannels}
+                muteAll={muteAll}
+              />
+            ))}
+          </div>
+        )}
+
+        {addedEvents.length === 0 && (
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "40px 20px", textAlign: "center", color: "#9ca3af", fontSize: 14 }}>
+            No notifications added yet. Use the dropdown above to add events.
+          </div>
+        )}
+
+        {/* Save bar */}
+        <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
+          {saved && (
+            <span style={{ fontSize: 14, color: "#059669", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8.5L6.5 12L13 4" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Preferences saved
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            style={{ padding: "10px 28px", fontSize: 14, fontWeight: 600, color: "#fff", background: "#5c50d2", border: "none", borderRadius: 8, cursor: "pointer", transition: "background 150ms" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#4a3fc0")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#5c50d2")}
+          >
+            Save preferences
+          </button>
+        </div>
+
+        {/* Footer */}
+        <p style={{ textAlign: "center", fontSize: 12, color: "#c0c5ce", marginTop: 32 }}>
+          These preferences are for your user account only. Account-wide settings can be managed by your admin. Powered by Knock.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Individual notification row ─── */
+function NotificationRow({
+  event,
+  config,
+  isLast,
+  isPopoverOpen,
+  onTogglePopover,
+  onClosePopover,
+  onSave,
+  onRemove,
+  onToggleMute,
+  globalChannels,
+  muteAll,
+}) {
+  const menuRef = useRef(null);
+  const item = { ...event, ...config };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "14px 20px",
+        gap: 12,
+        borderBottom: isLast ? "none" : "1px solid #f3f4f6",
+        transition: "background 150ms",
+        position: "relative",
+        opacity: config.muted ? 0.55 : 1,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#fafbfc")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      {/* Event name */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: config.muted ? "#9ca3af" : "#111827", textDecoration: config.muted ? "line-through" : "none" }}>
+          {event.label}
+        </div>
+      </div>
+
+      {/* Config summary */}
+      <div style={{ flexShrink: 0 }}>
+        <ConfigSummary
+          channels={config.channels}
+          cadence={config.cadence}
+          muted={config.muted}
+          globalChannels={globalChannels}
+          slackChannels={config.slackChannels}
+        />
+      </div>
+
+      {/* ⋯ menu button */}
+      <div style={{ position: "relative", flexShrink: 0 }} ref={menuRef}>
+        <button
+          onClick={onTogglePopover}
+          disabled={muteAll}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 32, height: 32, borderRadius: 6,
+            border: isPopoverOpen ? "1px solid #5c50d2" : "1px solid #e5e7eb",
+            background: isPopoverOpen ? "#f5f3ff" : "#fff",
+            cursor: muteAll ? "not-allowed" : "pointer",
+            transition: "all 150ms",
+            color: isPopoverOpen ? "#5c50d2" : "#6b7280",
+            fontSize: 18, fontWeight: 700, letterSpacing: 2, lineHeight: 1, paddingBottom: 4,
+          }}
+        >
+          &middot;&middot;&middot;
+        </button>
+        {isPopoverOpen && (
+          <ConfigPopover item={item} anchorRef={menuRef} onClose={onClosePopover} onSave={onSave} globalChannels={globalChannels} />
+        )}
+      </div>
+
+      {/* Mute button */}
+      <button
+        onClick={onToggleMute}
+        title={config.muted ? "Unmute" : "Mute"}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 32, height: 32, borderRadius: 6,
+          border: config.muted ? "1px solid #fef3c7" : "1px solid #e5e7eb",
+          background: config.muted ? "#fffbeb" : "#fff",
+          cursor: "pointer",
+          transition: "all 150ms",
+          color: config.muted ? "#b45309" : "#9ca3af",
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) => {
+          if (!config.muted) {
+            e.currentTarget.style.color = "#b45309";
+            e.currentTarget.style.borderColor = "#fef3c7";
+            e.currentTarget.style.background = "#fffbeb";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!config.muted) {
+            e.currentTarget.style.color = "#9ca3af";
+            e.currentTarget.style.borderColor = "#e5e7eb";
+            e.currentTarget.style.background = "#fff";
+          }
+        }}
+      >
+        <MuteIcon muted={config.muted} />
+      </button>
+
+      {/* Trash button */}
+      <button
+        onClick={onRemove}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 32, height: 32, borderRadius: 6,
+          border: "1px solid #e5e7eb", background: "#fff",
+          cursor: "pointer", transition: "all 150ms",
+          color: "#9ca3af", flexShrink: 0,
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
+      >
+        <TrashIcon />
+      </button>
+    </div>
+  );
+}

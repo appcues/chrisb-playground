@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notification Center Mockup</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    // Load the JSX file at runtime, strip import/export, and render
+    fetch('./notification-center-mockup.jsx?v=' + Date.now())
+      .then(r => r.text())
+      .then(code => {
+        // Make React hooks available as globals
+        const { useState, useRef, useEffect } = React;
+
+        // Strip import/export statements and eval the component code
+        const cleaned = code
+          .replace(/^import\s+.*?from\s+["'].*?["'];?\s*$/gm, '')
+          .replace(/^export\s+default\s+/gm, 'window.__NotificationCenter__ = ');
+
+        // Transpile JSX via Babel
+        const transpiled = Babel.transform(cleaned, { presets: ['react'] }).code;
+
+        // Execute in a scope with React globals
+        const fn = new Function('React', 'useState', 'useRef', 'useEffect', transpiled + '\nreturn window.__NotificationCenter__;');
+        const NotificationCenter = fn(React, useState, useRef, useEffect);
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(NotificationCenter));
+      })
+      .catch(err => {
+        document.getElementById('root').innerHTML =
+          '<pre style="color:red;padding:20px">' + err.message + '\n' + (err.stack || '') + '</pre>';
+      });
+  </script>
+</body>
+</html>
