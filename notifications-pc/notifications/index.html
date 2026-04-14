@@ -15,7 +15,7 @@
   <div id="root"></div>
   <script type="text/babel">
     // Load the JSX file at runtime, strip import/export, and render
-    fetch('./notification-center-mockup.jsx?v=' + Date.now())
+    fetch('./notification-center-mockup.js?v=' + Date.now())
       .then(r => r.text())
       .then(code => {
         // Make React hooks available as globals
