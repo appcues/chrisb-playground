@@ -114,8 +114,8 @@ function ToggleSwitch({ checked, onChange, size = "normal" }) {
 /* ─── Tab bar ─── */
 function TabBar({ activeTab, onTabChange }) {
   const tabs = [
-    { id: "account", label: "Account Notifications" },
     { id: "personal", label: "Personal Notifications" },
+    { id: "account", label: "Account Notifications" },
   ];
   return (
     <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: "2px solid #e5e7eb" }}>
@@ -818,7 +818,7 @@ function TabContent({ tabType }) {
 
 /* ─── Main component ─── */
 export default function NotificationCenter() {
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState("personal");
 
   return (
     <div
