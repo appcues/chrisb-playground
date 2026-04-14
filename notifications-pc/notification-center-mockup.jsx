@@ -257,7 +257,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
       <div style={{ padding: "16px 16px 12px" }}>
         {tabType === "account" && (
           <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.05em", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 10 }}>
               Channels
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -294,7 +294,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         {/* Email address input -- Account tab only */}
         {tabType === "account" && selectedChannels.includes("email") && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
               Email address
               <span style={{ color: "#ef4444", fontSize: 13, lineHeight: 1 }}>*</span>
             </div>
@@ -322,7 +322,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         {/* Slack channel picker -- Account tab only */}
         {tabType === "account" && selectedChannels.includes("slack") && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
               Slack channel
               <span style={{ color: "#ef4444", fontSize: 13, lineHeight: 1 }}>*</span>
             </div>
@@ -359,7 +359,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
 
       {/* Cadence section */}
       <div style={{ padding: "12px 16px 16px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.05em", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 10 }}>
           Delivery
         </div>
         {item.cadenceLocked ? (
@@ -395,7 +395,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
 
         {showStartsOn && !item.cadenceLocked && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.04em", marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
               Starts on
             </div>
             <input
