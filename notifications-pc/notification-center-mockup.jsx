@@ -498,7 +498,7 @@ function NotificationRow({
 }) {
   const menuRef = useRef(null);
   const item = { ...event, ...config };
-  const isMuted = tabType === "personal" && config.muted;
+  const isMuted = tabType === "personal" && (config.muted || muteAll);
 
   return (
     <div
@@ -527,7 +527,7 @@ function NotificationRow({
         <ConfigSummary
           channels={config.channels}
           cadence={config.cadence}
-          muted={config.muted}
+          muted={isMuted}
           tabType={tabType}
           slackChannels={config.slackChannels}
           emailAddress={config.emailAddress}
@@ -538,13 +538,12 @@ function NotificationRow({
       <div style={{ position: "relative", flexShrink: 0 }} ref={menuRef}>
         <button
           onClick={onTogglePopover}
-          disabled={muteAll}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             width: 32, height: 32, borderRadius: 6,
             border: isPopoverOpen ? "1px solid #5c50d2" : "1px solid #e5e7eb",
             background: isPopoverOpen ? "#f5f3ff" : "#fff",
-            cursor: muteAll ? "not-allowed" : "pointer",
+            cursor: "pointer",
             transition: "all 150ms",
             color: isPopoverOpen ? "#5c50d2" : "#6b7280",
             fontSize: 18, fontWeight: 700, letterSpacing: 2, lineHeight: 1, paddingBottom: 4,
@@ -715,8 +714,6 @@ function TabContent({ tabType }) {
           alignItems: "center",
           gap: 10,
           marginBottom: 16,
-          opacity: muteAll ? 0.5 : 1,
-          pointerEvents: muteAll ? "none" : "auto",
         }}
       >
         <label style={{ fontSize: 14, fontWeight: 600, color: "#374151", whiteSpace: "nowrap" }}>
@@ -725,12 +722,11 @@ function TabContent({ tabType }) {
         <select
           value={selectedEvent}
           onChange={(e) => setSelectedEvent(e.target.value)}
-          disabled={muteAll}
           style={{
             flex: 1, padding: "8px 12px", fontSize: 14,
             border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff",
             color: selectedEvent ? "#111827" : "#9ca3af",
-            outline: "none", cursor: muteAll ? "not-allowed" : "pointer", appearance: "auto",
+            outline: "none", cursor: "pointer", appearance: "auto",
           }}
         >
           <option value="">Select an event...</option>
@@ -740,14 +736,14 @@ function TabContent({ tabType }) {
         </select>
         <button
           onClick={addEvent}
-          disabled={!selectedEvent || muteAll}
+          disabled={!selectedEvent}
           style={{
             padding: "8px 20px", fontSize: 14, fontWeight: 600,
-            color: selectedEvent && !muteAll ? "#fff" : "#9ca3af",
-            background: selectedEvent && !muteAll ? "#5c50d2" : "#f3f4f6",
-            border: selectedEvent && !muteAll ? "none" : "1px solid #e5e7eb",
+            color: selectedEvent ? "#fff" : "#9ca3af",
+            background: selectedEvent ? "#5c50d2" : "#f3f4f6",
+            border: selectedEvent ? "none" : "1px solid #e5e7eb",
             borderRadius: 8,
-            cursor: selectedEvent && !muteAll ? "pointer" : "not-allowed",
+            cursor: selectedEvent ? "pointer" : "not-allowed",
             transition: "all 150ms", whiteSpace: "nowrap",
           }}
         >
@@ -762,7 +758,6 @@ function TabContent({ tabType }) {
             background: "#fff",
             borderRadius: 12,
             border: "1px solid #e5e7eb",
-            opacity: muteAll ? 0.5 : 1,
             position: "relative",
           }}
         >
