@@ -251,44 +251,48 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         overflow: "hidden",
       }}
     >
-      {/* Channels section */}
+      {/* Channels section -- hidden on Personal tab (email only) */}
       <div style={{ padding: "16px 16px 12px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-          Channels
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {channelOptions.map((ch) => {
-            const isSelected = selectedChannels.includes(ch.id);
-            return (
-              <button
-                key={ch.id}
-                onClick={() => toggleChannel(ch.id)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8,
-                  border: isSelected ? "1.5px solid #5c50d2" : "1.5px solid #e5e7eb",
-                  background: isSelected ? "#f5f3ff" : "#fff",
-                  cursor: "pointer",
-                  transition: "all 150ms",
-                }}
-              >
-                <span style={{ fontSize: 15, width: 22, textAlign: "center" }}>{ch.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: isSelected ? "#5c50d2" : "#374151", flex: 1, textAlign: "left" }}>
-                  {ch.label}
-                </span>
-                {isSelected && (
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8.5L6.5 12L13 4" stroke="#5c50d2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {tabType === "account" && (
+          <>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.05em", marginBottom: 10 }}>
+              Channels
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {channelOptions.map((ch) => {
+                const isSelected = selectedChannels.includes(ch.id);
+                return (
+                  <button
+                    key={ch.id}
+                    onClick={() => toggleChannel(ch.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8,
+                      border: isSelected ? "1.5px solid #5c50d2" : "1.5px solid #e5e7eb",
+                      background: isSelected ? "#f5f3ff" : "#fff",
+                      cursor: "pointer",
+                      transition: "all 150ms",
+                    }}
+                  >
+                    <span style={{ fontSize: 15, width: 22, textAlign: "center" }}>{ch.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: isSelected ? "#5c50d2" : "#374151", flex: 1, textAlign: "left" }}>
+                      {ch.label}
+                    </span>
+                    {isSelected && (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8.5L6.5 12L13 4" stroke="#5c50d2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* Email address input -- Account tab only */}
         {tabType === "account" && selectedChannels.includes("email") && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
               Email address
               <span style={{ color: "#ef4444", fontSize: 13, lineHeight: 1 }}>*</span>
             </div>
@@ -296,7 +300,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
               type="email"
               value={emailAddress}
               onChange={(e) => { setEmailAddress(e.target.value); if (e.target.value.trim()) setEmailError(false); }}
-              placeholder="notifications@company.com"
+              placeholder="anyemail@example.com"
               style={{
                 width: "100%", padding: "6px 10px", fontSize: 13,
                 border: emailError ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
@@ -316,7 +320,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         {/* Slack channel picker -- Account tab only */}
         {tabType === "account" && selectedChannels.includes("slack") && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
               Slack channel
               <span style={{ color: "#ef4444", fontSize: 13, lineHeight: 1 }}>*</span>
             </div>
@@ -353,7 +357,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
 
       {/* Cadence section */}
       <div style={{ padding: "12px 16px 16px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.05em", marginBottom: 10 }}>
           Delivery
         </div>
         {item.cadenceLocked ? (
@@ -389,7 +393,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
 
         {showStartsOn && !item.cadenceLocked && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.04em", marginBottom: 6 }}>
               Starts on
             </div>
             <input
@@ -644,7 +648,7 @@ function TabContent({ tabType }) {
     setAddedIds((prev) => [...prev, selectedEvent]);
     setEventConfigs((prev) => ({
       ...prev,
-      [selectedEvent]: { ...prev[selectedEvent], channels: ["email"], cadence: "immediate", slackChannels: [], emailAddress: "", startsOn: "", muted: false },
+      [selectedEvent]: { ...prev[selectedEvent], channels: ["email"], cadence: "immediate", slackChannels: [], emailAddress: tabType === "account" ? "anyemail@example.com" : "", startsOn: "", muted: false },
     }));
     setSelectedEvent("");
     setSaved(false);
@@ -713,7 +717,7 @@ function TabContent({ tabType }) {
         }}
       >
         <label style={{ fontSize: 14, fontWeight: 600, color: "#374151", whiteSpace: "nowrap" }}>
-          Notify me when
+          {tabType === "account" ? "Send notification when" : "Notify me when"}
         </label>
         <select
           value={selectedEvent}
@@ -844,10 +848,6 @@ export default function NotificationCenter() {
         {activeTab === "account" && <TabContent tabType="account" />}
         {activeTab === "personal" && <TabContent tabType="personal" />}
 
-        {/* Footer */}
-        <p style={{ textAlign: "center", fontSize: 12, color: "#c0c5ce", marginTop: 32 }}>
-          These preferences are for your user account only. Account-wide settings can be managed by your admin. Powered by Knock.
-        </p>
       </div>
     </div>
   );
