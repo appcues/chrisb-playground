@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, createPortal } from "react";
+import { useState, useRef, useEffect } from "react";
 const { createPortal: _createPortal } = ReactDOM;
 
 const CHANNEL_OPTIONS = [
@@ -72,17 +72,6 @@ function MuteIcon({ muted }) {
   );
 }
 
-/* Small inline mute icon for channel badges */
-function SmallMuteIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M8 2a4 4 0 014 4v2.5l1.3 1.3a.5.5 0 01-.35.85H3.05a.5.5 0 01-.35-.85L4 8.5V6a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6.5 11a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /* ─── Toggle switch ─── */
 function ToggleSwitch({ checked, onChange, size = "normal" }) {
   const w = size === "small" ? 36 : 44;
@@ -122,122 +111,54 @@ function ToggleSwitch({ checked, onChange, size = "normal" }) {
   );
 }
 
-/* ─── Mute Channel dropdown with checkboxes ─── */
-function MuteChannelDropdown({ globalChannels, onToggle }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const anyMuted = !globalChannels.email || !globalChannels.slack;
-
+/* ─── Tab bar ─── */
+function TabBar({ activeTab, onTabChange }) {
+  const tabs = [
+    { id: "account", label: "Account Notifications" },
+    { id: "personal", label: "Personal Notifications" },
+  ];
   return (
-    <div style={{ position: "relative" }} ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "6px 14px",
-          fontSize: 13,
-          fontWeight: 500,
-          color: anyMuted ? "#b45309" : "#6b7280",
-          background: anyMuted ? "#fffbeb" : "#fff",
-          border: anyMuted ? "1px solid #fef3c7" : "1px solid #e5e7eb",
-          borderRadius: 8,
-          cursor: "pointer",
-          transition: "all 150ms",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Mute Channel
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 150ms" }}>
-          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            zIndex: 20,
-            padding: "6px 0",
-            minWidth: 180,
-          }}
-        >
-          {CHANNEL_OPTIONS.map((ch) => {
-            const isMuted = !globalChannels[ch.id];
-            return (
-              <button
-                key={ch.id}
-                onClick={() => onToggle(ch.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 14px",
-                  width: "100%",
-                  border: "none",
-                  background: "none",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  color: "#374151",
-                  textAlign: "left",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-              >
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: 4,
-                    border: isMuted ? "none" : "2px solid #d1d5db",
-                    background: isMuted ? "#5c50d2" : "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {isMuted && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14 }}>{ch.icon}</span>
-                  Mute {ch.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+    <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: "2px solid #e5e7eb" }}>
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            style={{
+              padding: "10px 24px",
+              fontSize: 14,
+              fontWeight: 600,
+              color: isActive ? "#5c50d2" : "#6b7280",
+              background: "none",
+              border: "none",
+              borderBottom: isActive ? "2px solid #5c50d2" : "2px solid transparent",
+              marginBottom: -2,
+              cursor: "pointer",
+              transition: "all 150ms",
+            }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 /* ─── Popover for configuring channels + cadence ─── */
-function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
+function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
+  const channelOptions = tabType === "personal"
+    ? CHANNEL_OPTIONS.filter((c) => c.id === "email")
+    : CHANNEL_OPTIONS;
+
   const [selectedChannels, setSelectedChannels] = useState([...item.channels]);
   const [selectedCadence, setSelectedCadence] = useState(item.cadence);
   const [slackChannels, setSlackChannels] = useState([...(item.slackChannels || [])]);
+  const [emailAddress, setEmailAddress] = useState(item.emailAddress || "");
   const [startsOn, setStartsOn] = useState(item.startsOn || "");
   const [slackError, setSlackError] = useState(false);
+  const [emailError, setEmailError] = useState(false);
   const popoverRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
@@ -245,10 +166,9 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
     function updatePos() {
       if (anchorRef.current) {
         const rect = anchorRef.current.getBoundingClientRect();
-        const popH = 420; // approximate max popover height
+        const popH = 480;
         const spaceBelow = window.innerHeight - rect.bottom - 8;
         if (spaceBelow < popH) {
-          // Open upward
           setPos({ top: rect.top - popH - 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
         } else {
           setPos({ top: rect.bottom + 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
@@ -286,20 +206,28 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
         setSlackChannels([]);
         setSlackError(false);
       }
+      if (chId === "email" && !next.includes("email")) {
+        setEmailAddress("");
+        setEmailError(false);
+      }
       return next;
     });
   };
 
   const handleSave = () => {
-    // Require Slack channel if Slack is selected
-    if (selectedChannels.includes("slack") && slackChannels.length === 0) {
+    if (tabType === "account" && selectedChannels.includes("slack") && slackChannels.length === 0) {
       setSlackError(true);
+      return;
+    }
+    if (tabType === "account" && selectedChannels.includes("email") && !emailAddress.trim()) {
+      setEmailError(true);
       return;
     }
     onSave({
       channels: selectedChannels,
       cadence: selectedCadence,
-      slackChannels,
+      slackChannels: tabType === "account" ? slackChannels : [],
+      emailAddress: tabType === "account" ? emailAddress.trim() : "",
       startsOn: (selectedCadence === "weekly" || selectedCadence === "monthly") ? startsOn : "",
     });
   };
@@ -329,9 +257,8 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
           Channels
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {CHANNEL_OPTIONS.map((ch) => {
+          {channelOptions.map((ch) => {
             const isSelected = selectedChannels.includes(ch.id);
-            const isGloballyMuted = globalChannels && !globalChannels[ch.id];
             return (
               <button
                 key={ch.id}
@@ -345,13 +272,8 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
                 }}
               >
                 <span style={{ fontSize: 15, width: 22, textAlign: "center" }}>{ch.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: isSelected ? "#5c50d2" : "#374151", flex: 1, textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: isSelected ? "#5c50d2" : "#374151", flex: 1, textAlign: "left" }}>
                   {ch.label}
-                  {isGloballyMuted && (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#b45309", fontWeight: 400 }}>
-                      <SmallMuteIcon /> muted
-                    </span>
-                  )}
                 </span>
                 {isSelected && (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -363,8 +285,36 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
           })}
         </div>
 
-        {/* Slack channel picker — required when Slack is selected */}
-        {selectedChannels.includes("slack") && (
+        {/* Email address input -- Account tab only */}
+        {tabType === "account" && selectedChannels.includes("email") && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+              Email address
+              <span style={{ color: "#ef4444", fontSize: 13, lineHeight: 1 }}>*</span>
+            </div>
+            <input
+              type="email"
+              value={emailAddress}
+              onChange={(e) => { setEmailAddress(e.target.value); if (e.target.value.trim()) setEmailError(false); }}
+              placeholder="notifications@company.com"
+              style={{
+                width: "100%", padding: "6px 10px", fontSize: 13,
+                border: emailError ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+                borderRadius: 6, background: "#fff",
+                color: emailAddress ? "#374151" : "#9ca3af",
+                outline: "none",
+              }}
+            />
+            {emailError && (
+              <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>
+                Please enter an email address
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Slack channel picker -- Account tab only */}
+        {tabType === "account" && selectedChannels.includes("slack") && (
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
               Slack channel
@@ -437,7 +387,6 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
           </div>
         )}
 
-        {/* Starts on date picker for weekly/monthly */}
         {showStartsOn && !item.cadenceLocked && (
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
@@ -448,15 +397,9 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
               value={startsOn}
               onChange={(e) => setStartsOn(e.target.value)}
               style={{
-                width: "100%",
-                padding: "6px 10px",
-                fontSize: 13,
-                border: "1px solid #e5e7eb",
-                borderRadius: 6,
-                background: "#fff",
-                color: startsOn ? "#374151" : "#9ca3af",
-                outline: "none",
-                cursor: "pointer",
+                width: "100%", padding: "6px 10px", fontSize: 13,
+                border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff",
+                color: startsOn ? "#374151" : "#9ca3af", outline: "none", cursor: "pointer",
               }}
             />
           </div>
@@ -477,8 +420,8 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, globalChannels }) {
 }
 
 /* ─── Summary pills shown on each row ─── */
-function ConfigSummary({ channels, cadence, muted, globalChannels, slackChannels }) {
-  if (muted) {
+function ConfigSummary({ channels, cadence, muted, tabType, slackChannels, emailAddress }) {
+  if (tabType === "personal" && muted) {
     return (
       <span style={{ fontSize: 12, color: "#b45309", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
         Muted
@@ -508,27 +451,23 @@ function ConfigSummary({ channels, cadence, muted, globalChannels, slackChannels
       </span>
       {channels.map((chId) => {
         const ch = CHANNEL_OPTIONS.find((c) => c.id === chId);
-        const isMuted = globalChannels && !globalChannels[chId];
-        const slackName = chId === "slack" && slackChannels && slackChannels[0] ? slackChannels[0] : null;
+        const detail = chId === "email" && tabType === "account" && emailAddress
+          ? emailAddress
+          : chId === "slack" && slackChannels && slackChannels[0]
+            ? slackChannels[0]
+            : null;
         return (
           <span
             key={chId}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 3,
-              padding: "2px 8px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: isMuted ? "#b45309" : "#374151",
-              background: isMuted ? "#fffbeb" : "#f3f4f6",
-              border: isMuted ? "1px solid #fef3c7" : "1px solid transparent",
-              borderRadius: 5,
+              display: "inline-flex", alignItems: "center", gap: 3,
+              padding: "2px 8px", fontSize: 12, fontWeight: 500,
+              color: "#374151", background: "#f3f4f6", borderRadius: 5,
             }}
           >
-            {isMuted && <SmallMuteIcon />}
             <span style={{ fontSize: 11 }}>{ch?.icon}</span>
-            {ch?.label}{slackName && <span style={{ fontSize: 11, color: isMuted ? "#b45309" : "#6b7280", fontWeight: 400 }}>{" "}{slackName}</span>}
+            {ch?.label}
+            {detail && <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 400 }}>{" "}{detail}</span>}
           </span>
         );
       })}
@@ -536,8 +475,137 @@ function ConfigSummary({ channels, cadence, muted, globalChannels, slackChannels
   );
 }
 
-/* ─── Main component ─── */
-export default function NotificationCenter() {
+/* ─── Individual notification row ─── */
+function NotificationRow({
+  event,
+  config,
+  isLast,
+  isPopoverOpen,
+  onTogglePopover,
+  onClosePopover,
+  onSave,
+  onRemove,
+  onToggleMute,
+  tabType,
+  muteAll,
+}) {
+  const menuRef = useRef(null);
+  const item = { ...event, ...config };
+  const isMuted = tabType === "personal" && config.muted;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "14px 20px",
+        gap: 12,
+        borderBottom: isLast ? "none" : "1px solid #f3f4f6",
+        transition: "background 150ms",
+        position: "relative",
+        opacity: isMuted ? 0.55 : 1,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#fafbfc")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      {/* Event name */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: isMuted ? "#9ca3af" : "#111827", textDecoration: isMuted ? "line-through" : "none" }}>
+          {event.label}
+        </div>
+      </div>
+
+      {/* Config summary */}
+      <div style={{ flexShrink: 0 }}>
+        <ConfigSummary
+          channels={config.channels}
+          cadence={config.cadence}
+          muted={config.muted}
+          tabType={tabType}
+          slackChannels={config.slackChannels}
+          emailAddress={config.emailAddress}
+        />
+      </div>
+
+      {/* ⋯ menu button */}
+      <div style={{ position: "relative", flexShrink: 0 }} ref={menuRef}>
+        <button
+          onClick={onTogglePopover}
+          disabled={muteAll}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 32, height: 32, borderRadius: 6,
+            border: isPopoverOpen ? "1px solid #5c50d2" : "1px solid #e5e7eb",
+            background: isPopoverOpen ? "#f5f3ff" : "#fff",
+            cursor: muteAll ? "not-allowed" : "pointer",
+            transition: "all 150ms",
+            color: isPopoverOpen ? "#5c50d2" : "#6b7280",
+            fontSize: 18, fontWeight: 700, letterSpacing: 2, lineHeight: 1, paddingBottom: 4,
+          }}
+        >
+          &middot;&middot;&middot;
+        </button>
+        {isPopoverOpen && _createPortal(
+          <ConfigPopover item={item} anchorRef={menuRef} onClose={onClosePopover} onSave={onSave} tabType={tabType} />,
+          document.body
+        )}
+      </div>
+
+      {/* Mute button -- Personal tab only */}
+      {tabType === "personal" && (
+        <button
+          onClick={onToggleMute}
+          title={config.muted ? "Unmute" : "Mute"}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 32, height: 32, borderRadius: 6,
+            border: config.muted ? "1px solid #fef3c7" : "1px solid #e5e7eb",
+            background: config.muted ? "#fffbeb" : "#fff",
+            cursor: "pointer",
+            transition: "all 150ms",
+            color: config.muted ? "#b45309" : "#9ca3af",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            if (!config.muted) {
+              e.currentTarget.style.color = "#b45309";
+              e.currentTarget.style.borderColor = "#fef3c7";
+              e.currentTarget.style.background = "#fffbeb";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!config.muted) {
+              e.currentTarget.style.color = "#9ca3af";
+              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.background = "#fff";
+            }
+          }}
+        >
+          <MuteIcon muted={config.muted} />
+        </button>
+      )}
+
+      {/* Trash button */}
+      <button
+        onClick={onRemove}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 32, height: 32, borderRadius: 6,
+          border: "1px solid #e5e7eb", background: "#fff",
+          cursor: "pointer", transition: "all 150ms",
+          color: "#9ca3af", flexShrink: 0,
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
+      >
+        <TrashIcon />
+      </button>
+    </div>
+  );
+}
+
+/* ─── Tab content ─── */
+function TabContent({ tabType }) {
   const [eventConfigs, setEventConfigs] = useState(() => {
     const configs = {};
     ALL_EVENTS.forEach((e) => {
@@ -546,6 +614,7 @@ export default function NotificationCenter() {
         cadence: e.defaultCadence || "immediate",
         cadenceLocked: e.cadenceLocked || false,
         slackChannels: [],
+        emailAddress: "",
         startsOn: "",
         muted: false,
       };
@@ -558,12 +627,6 @@ export default function NotificationCenter() {
   const [saved, setSaved] = useState(false);
   const [openPopover, setOpenPopover] = useState(null);
   const [muteAll, setMuteAll] = useState(false);
-  const [globalChannels, setGlobalChannels] = useState({ email: true, slack: true });
-
-  const toggleGlobalChannel = (chId) => {
-    setGlobalChannels((prev) => ({ ...prev, [chId]: !prev[chId] }));
-    setSaved(false);
-  };
 
   const updateNotification = (id, updates) => {
     setEventConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...updates } }));
@@ -581,7 +644,7 @@ export default function NotificationCenter() {
     setAddedIds((prev) => [...prev, selectedEvent]);
     setEventConfigs((prev) => ({
       ...prev,
-      [selectedEvent]: { ...prev[selectedEvent], channels: ["email"], cadence: "immediate", slackChannels: [], startsOn: "", muted: false },
+      [selectedEvent]: { ...prev[selectedEvent], channels: ["email"], cadence: "immediate", slackChannels: [], emailAddress: "", startsOn: "", muted: false },
     }));
     setSelectedEvent("");
     setSaved(false);
@@ -592,7 +655,7 @@ export default function NotificationCenter() {
     const original = ALL_EVENTS.find((e) => e.id === id);
     setEventConfigs((prev) => ({
       ...prev,
-      [id]: { channels: ["email"], cadence: original?.defaultCadence || "immediate", cadenceLocked: original?.cadenceLocked || false, slackChannels: [], startsOn: "", muted: false },
+      [id]: { channels: ["email"], cadence: original?.defaultCadence || "immediate", cadenceLocked: original?.cadenceLocked || false, slackChannels: [], emailAddress: "", startsOn: "", muted: false },
     }));
     setSaved(false);
     setOpenPopover(null);
@@ -605,6 +668,150 @@ export default function NotificationCenter() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
+
+  const showMuteAll = tabType === "personal" && addedEvents.length > 0;
+
+  return (
+    <div>
+      {/* Admin-only notice for Account tab */}
+      {tabType === "account" && (
+        <div style={{ padding: "10px 16px", marginBottom: 16, background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+          <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>
+            These settings are editable only by Admins.
+          </span>
+        </div>
+      )}
+
+      {/* Mute all toggle -- Personal tab only, shown when events exist */}
+      {showMuteAll && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginBottom: 20,
+            padding: "10px 16px",
+          }}
+        >
+          <ToggleSwitch checked={muteAll} onChange={setMuteAll} size="small" />
+          <span style={{ fontSize: 13, fontWeight: 600, color: muteAll ? "#b45309" : "#374151" }}>
+            Mute all notifications
+          </span>
+        </div>
+      )}
+
+      {/* Notify me when -- dropdown + Add button */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 16,
+          opacity: muteAll ? 0.5 : 1,
+          pointerEvents: muteAll ? "none" : "auto",
+        }}
+      >
+        <label style={{ fontSize: 14, fontWeight: 600, color: "#374151", whiteSpace: "nowrap" }}>
+          Notify me when
+        </label>
+        <select
+          value={selectedEvent}
+          onChange={(e) => setSelectedEvent(e.target.value)}
+          disabled={muteAll}
+          style={{
+            flex: 1, padding: "8px 12px", fontSize: 14,
+            border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff",
+            color: selectedEvent ? "#111827" : "#9ca3af",
+            outline: "none", cursor: muteAll ? "not-allowed" : "pointer", appearance: "auto",
+          }}
+        >
+          <option value="">Select an event...</option>
+          {availableEvents.map((e) => (
+            <option key={e.id} value={e.id}>{e.label}</option>
+          ))}
+        </select>
+        <button
+          onClick={addEvent}
+          disabled={!selectedEvent || muteAll}
+          style={{
+            padding: "8px 20px", fontSize: 14, fontWeight: 600,
+            color: selectedEvent && !muteAll ? "#fff" : "#9ca3af",
+            background: selectedEvent && !muteAll ? "#5c50d2" : "#f3f4f6",
+            border: selectedEvent && !muteAll ? "none" : "1px solid #e5e7eb",
+            borderRadius: 8,
+            cursor: selectedEvent && !muteAll ? "pointer" : "not-allowed",
+            transition: "all 150ms", whiteSpace: "nowrap",
+          }}
+        >
+          Add
+        </button>
+      </div>
+
+      {/* Added notification rows */}
+      {addedEvents.length > 0 && (
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 12,
+            border: "1px solid #e5e7eb",
+            opacity: muteAll ? 0.5 : 1,
+            position: "relative",
+          }}
+        >
+          <div style={{ maxHeight: 305, overflowY: "auto" }}>
+            {addedEvents.map((event, idx) => (
+              <NotificationRow
+                key={event.id}
+                event={event}
+                config={eventConfigs[event.id]}
+                isLast={idx === addedEvents.length - 1}
+                isPopoverOpen={openPopover === event.id}
+                onTogglePopover={() => setOpenPopover(openPopover === event.id ? null : event.id)}
+                onClosePopover={() => setOpenPopover(null)}
+                onSave={(updates) => updateNotification(event.id, updates)}
+                onRemove={() => removeEvent(event.id)}
+                onToggleMute={() => toggleMute(event.id)}
+                tabType={tabType}
+                muteAll={muteAll}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {addedEvents.length === 0 && (
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "40px 20px", textAlign: "center", color: "#9ca3af", fontSize: 14 }}>
+          No notifications added yet. Use the dropdown above to add events.
+        </div>
+      )}
+
+      {/* Save bar */}
+      <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
+        {saved && (
+          <span style={{ fontSize: 14, color: "#059669", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8.5L6.5 12L13 4" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Preferences saved
+          </span>
+        )}
+        <button
+          onClick={handleSave}
+          style={{ padding: "10px 28px", fontSize: 14, fontWeight: 600, color: "#fff", background: "#5c50d2", border: "none", borderRadius: 8, cursor: "pointer", transition: "background 150ms" }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#4a3fc0")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#5c50d2")}
+        >
+          Save preferences
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main component ─── */
+export default function NotificationCenter() {
+  const [activeTab, setActiveTab] = useState("account");
 
   return (
     <div
@@ -630,285 +837,18 @@ export default function NotificationCenter() {
           </p>
         </div>
 
-        {/* Mute all + Mute channel controls — only shown when notifications exist */}
-        {addedEvents.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: 20,
-              marginBottom: 20,
-              padding: "10px 16px",
-              background: "transparent",
-              borderRadius: 10,
-            }}
-          >
-            {/* Mute all toggle */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <ToggleSwitch checked={muteAll} onChange={setMuteAll} size="small" />
-              <span style={{ fontSize: 13, fontWeight: 600, color: muteAll ? "#b45309" : "#374151" }}>
-                Mute all notifications
-              </span>
-            </div>
+        {/* Tabs */}
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {/* Separator */}
-            <div style={{ width: 1, height: 24, background: "#e5e7eb" }} />
-
-            {/* Mute channel dropdown */}
-            <MuteChannelDropdown globalChannels={globalChannels} onToggle={toggleGlobalChannel} />
-          </div>
-        )}
-
-        {/* Notify me when — dropdown + Add button */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 16,
-            opacity: muteAll ? 0.5 : 1,
-            pointerEvents: muteAll ? "none" : "auto",
-          }}
-        >
-          <label style={{ fontSize: 14, fontWeight: 600, color: "#374151", whiteSpace: "nowrap" }}>
-            Notify me when
-          </label>
-          <select
-            value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            disabled={muteAll}
-            style={{
-              flex: 1,
-              padding: "8px 12px",
-              fontSize: 14,
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              background: "#fff",
-              color: selectedEvent ? "#111827" : "#9ca3af",
-              outline: "none",
-              cursor: muteAll ? "not-allowed" : "pointer",
-              appearance: "auto",
-            }}
-          >
-            <option value="">Select an event...</option>
-            {availableEvents.map((e) => (
-              <option key={e.id} value={e.id}>{e.label}</option>
-            ))}
-          </select>
-          <button
-            onClick={addEvent}
-            disabled={!selectedEvent || muteAll}
-            style={{
-              padding: "8px 20px",
-              fontSize: 14,
-              fontWeight: 600,
-              color: selectedEvent && !muteAll ? "#fff" : "#9ca3af",
-              background: selectedEvent && !muteAll ? "#5c50d2" : "#f3f4f6",
-              border: selectedEvent && !muteAll ? "none" : "1px solid #e5e7eb",
-              borderRadius: 8,
-              cursor: selectedEvent && !muteAll ? "pointer" : "not-allowed",
-              transition: "all 150ms",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Add
-          </button>
-        </div>
-
-        {/* Added notification rows */}
-        {addedEvents.length > 0 && (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              border: "1px solid #e5e7eb",
-              opacity: muteAll ? 0.5 : 1,
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                maxHeight: 305,
-                overflowY: "auto",
-              }}
-            >
-              {addedEvents.map((event, idx) => (
-                <NotificationRow
-                  key={event.id}
-                  event={event}
-                  config={eventConfigs[event.id]}
-                  isLast={idx === addedEvents.length - 1}
-                  isPopoverOpen={openPopover === event.id}
-                  onTogglePopover={() => setOpenPopover(openPopover === event.id ? null : event.id)}
-                  onClosePopover={() => setOpenPopover(null)}
-                  onSave={(updates) => updateNotification(event.id, updates)}
-                  onRemove={() => removeEvent(event.id)}
-                  onToggleMute={() => toggleMute(event.id)}
-                  globalChannels={globalChannels}
-                  muteAll={muteAll}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {addedEvents.length === 0 && (
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "40px 20px", textAlign: "center", color: "#9ca3af", fontSize: 14 }}>
-            No notifications added yet. Use the dropdown above to add events.
-          </div>
-        )}
-
-        {/* Save bar */}
-        <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
-          {saved && (
-            <span style={{ fontSize: 14, color: "#059669", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8.5L6.5 12L13 4" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Preferences saved
-            </span>
-          )}
-          <button
-            onClick={handleSave}
-            style={{ padding: "10px 28px", fontSize: 14, fontWeight: 600, color: "#fff", background: "#5c50d2", border: "none", borderRadius: 8, cursor: "pointer", transition: "background 150ms" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#4a3fc0")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#5c50d2")}
-          >
-            Save preferences
-          </button>
-        </div>
+        {/* Tab content */}
+        {activeTab === "account" && <TabContent tabType="account" />}
+        {activeTab === "personal" && <TabContent tabType="personal" />}
 
         {/* Footer */}
         <p style={{ textAlign: "center", fontSize: 12, color: "#c0c5ce", marginTop: 32 }}>
           These preferences are for your user account only. Account-wide settings can be managed by your admin. Powered by Knock.
         </p>
       </div>
-    </div>
-  );
-}
-
-/* ─── Individual notification row ─── */
-function NotificationRow({
-  event,
-  config,
-  isLast,
-  isPopoverOpen,
-  onTogglePopover,
-  onClosePopover,
-  onSave,
-  onRemove,
-  onToggleMute,
-  globalChannels,
-  muteAll,
-}) {
-  const menuRef = useRef(null);
-  const item = { ...event, ...config };
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "14px 20px",
-        gap: 12,
-        borderBottom: isLast ? "none" : "1px solid #f3f4f6",
-        transition: "background 150ms",
-        position: "relative",
-        opacity: config.muted ? 0.55 : 1,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "#fafbfc")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-    >
-      {/* Event name */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: config.muted ? "#9ca3af" : "#111827", textDecoration: config.muted ? "line-through" : "none" }}>
-          {event.label}
-        </div>
-      </div>
-
-      {/* Config summary */}
-      <div style={{ flexShrink: 0 }}>
-        <ConfigSummary
-          channels={config.channels}
-          cadence={config.cadence}
-          muted={config.muted}
-          globalChannels={globalChannels}
-          slackChannels={config.slackChannels}
-        />
-      </div>
-
-      {/* ⋯ menu button */}
-      <div style={{ position: "relative", flexShrink: 0 }} ref={menuRef}>
-        <button
-          onClick={onTogglePopover}
-          disabled={muteAll}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 32, height: 32, borderRadius: 6,
-            border: isPopoverOpen ? "1px solid #5c50d2" : "1px solid #e5e7eb",
-            background: isPopoverOpen ? "#f5f3ff" : "#fff",
-            cursor: muteAll ? "not-allowed" : "pointer",
-            transition: "all 150ms",
-            color: isPopoverOpen ? "#5c50d2" : "#6b7280",
-            fontSize: 18, fontWeight: 700, letterSpacing: 2, lineHeight: 1, paddingBottom: 4,
-          }}
-        >
-          &middot;&middot;&middot;
-        </button>
-        {isPopoverOpen && _createPortal(
-          <ConfigPopover item={item} anchorRef={menuRef} onClose={onClosePopover} onSave={onSave} globalChannels={globalChannels} />,
-          document.body
-        )}
-      </div>
-
-      {/* Mute button */}
-      <button
-        onClick={onToggleMute}
-        title={config.muted ? "Unmute" : "Mute"}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          width: 32, height: 32, borderRadius: 6,
-          border: config.muted ? "1px solid #fef3c7" : "1px solid #e5e7eb",
-          background: config.muted ? "#fffbeb" : "#fff",
-          cursor: "pointer",
-          transition: "all 150ms",
-          color: config.muted ? "#b45309" : "#9ca3af",
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => {
-          if (!config.muted) {
-            e.currentTarget.style.color = "#b45309";
-            e.currentTarget.style.borderColor = "#fef3c7";
-            e.currentTarget.style.background = "#fffbeb";
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!config.muted) {
-            e.currentTarget.style.color = "#9ca3af";
-            e.currentTarget.style.borderColor = "#e5e7eb";
-            e.currentTarget.style.background = "#fff";
-          }
-        }}
-      >
-        <MuteIcon muted={config.muted} />
-      </button>
-
-      {/* Trash button */}
-      <button
-        onClick={onRemove}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          width: 32, height: 32, borderRadius: 6,
-          border: "1px solid #e5e7eb", background: "#fff",
-          cursor: "pointer", transition: "all 150ms",
-          color: "#9ca3af", flexShrink: 0,
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fff"; }}
-      >
-        <TrashIcon />
-      </button>
     </div>
   );
 }
