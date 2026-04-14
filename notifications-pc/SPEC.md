@@ -2,52 +2,66 @@
 
 ## Overview
 
-An interactive UI for managing user-level notification preferences. Users select which events they want to be notified about, configure delivery channels (Email, Slack) and cadence (Immediate, Daily, Weekly, Monthly) per event, and can mute notifications at the global, channel, or individual event level.
+An interactive UI for managing notification preferences, split into two tabs:
 
-This is a standalone React JSX mockup rendered client-side via Babel. It is not connected to a backend -- all state is local.
+- **Personal Notifications** -- User-level preferences for email-only notifications. Users can mute individual events or all events at once.
+- **Account Notifications** -- Admin-managed, account-wide settings supporting Email and Slack channels with configurable addresses and Slack channel targets.
+
+Both tabs share the same event catalog (17 events). Each tab maintains independent state. This is a standalone React mockup rendered client-side via Babel -- all state is local.
+
+**Live URL**: `https://chrisb-playground.vercel.app/notifications`
 
 ---
 
 ## Feature Summary
 
-1. **Add/Remove Events** -- Select events from a dropdown and add them as notification rows. Remove with a trash icon.
-2. **Per-Event Channel Config** -- Choose Email, Slack, or both per event via a config popover.
-3. **Slack Channel Picker** -- Required dropdown when Slack is enabled. Channel name shown on the row badge.
+1. **Two-Tab Architecture** -- Personal Notifications (default, first tab) and Account Notifications.
+2. **Add/Remove Events** -- Select events from a dropdown and add them as notification rows. Remove with a trash icon.
+3. **Per-Event Config Popover** -- Configure delivery cadence via `...` button on each row.
 4. **Cadence Selection** -- Immediate, Daily, Weekly, or Monthly delivery per event.
-5. **Starts-On Date Picker** -- Shown when Weekly or Monthly cadence is selected to set the digest start date.
-6. **Cadence Locking** -- Some events (e.g. Weekly performance digest) have a fixed cadence that cannot be changed.
-7. **Mute All Toggle** -- Global switch that dims and disables all notification controls.
-8. **Mute Channel** -- Globally mute Email or Slack. Muted channels show a mute icon on row badges but remain configurable.
-9. **Per-Row Mute** -- Mute individual events with a bell icon. Muted rows show strikethrough text and "Muted" badge.
-10. **Scrollable List** -- Notification rows scroll after 5 items to keep the UI compact.
+5. **Starts-On Date Picker** -- Shown when Weekly or Monthly cadence is selected.
+6. **Cadence Locking** -- Some events (e.g. Weekly performance digest) have a fixed cadence.
+7. **Scrollable List** -- Notification rows scroll after 5 items to keep the UI compact.
+
+### Personal Notifications Tab Only
+8. **Mute All Toggle** -- Mutes every event row (same visual as per-row mute). Controls remain interactive.
+9. **Per-Row Mute** -- Mute individual events with a bell icon. Shows "Muted" badge.
+10. **Email-only channel** -- No channel selection in popover (only Delivery options shown).
+
+### Account Notifications Tab Only
+11. **Email + Slack Channels** -- Channel selection in popover with Email and Slack toggle buttons.
+12. **Email Address Input** -- Required field (default: `anyemail@example.com`). Shown in row badge on Add.
+13. **Slack Channel Picker** -- Required dropdown when Slack is enabled. Channel name shown on row badge.
+14. **Admin-Only Notice** -- Banner: "These settings are editable only by Admins."
+15. **No mute controls** -- No mute toggle or per-row mute buttons.
 
 ---
 
 ## UI Components
 
-### NotificationCenter (main)
-- Page header with title and description
-- Mute controls bar (right-aligned, only visible when 1+ events added)
-- "Notify me when" dropdown + Add button
-- Scrollable notification row list (max ~5 rows visible)
-- Save preferences button
-- Footer text
+### NotificationCenter (main shell)
+- Page header: "Notification Preferences" with subtitle "Configure notification preferences and delivery cadence."
+- TabBar with Personal Notifications (default) and Account Notifications
+- Renders TabContent for the active tab
 
-### MuteChannelDropdown
-- Custom dropdown button with chevron
-- Checkbox items for each channel (Email, Slack)
-- Amber styling when any channel is muted
-- Click-outside-to-close behavior
+### TabBar
+- Two tabs: Personal Notifications, Account Notifications
+- Active tab has purple underline and text
+
+### TabContent
+- Manages all per-tab state independently (eventConfigs, addedIds, muteAll, etc.)
+- Renders tab-specific controls based on `tabType` prop ("personal" or "account")
+- Account tab: "Send notification when" label, admin notice
+- Personal tab: "Notify me when" label, mute all toggle (when events exist)
 
 ### ConfigPopover
-- Rendered via React portal to `document.body` to avoid scroll container clipping
-- Auto-positions: opens downward if space allows, flips upward near viewport bottom
+- Rendered via React portal to `document.body` to avoid scroll clipping
+- Positioned right-aligned to anchor button, prefers below, flips above, clamped to viewport
+- Scrollable if taller than viewport (`maxHeight: 100vh - 16px`)
 - Repositions on scroll/resize
-- **Channels section**: Toggle buttons for Email and Slack, with muted indicator when globally muted (still clickable)
-- **Slack channel picker**: Required `<select>` with red asterisk; validation error shown if empty on save
-- **Delivery section**: Radio buttons for cadence options; locked display for cadence-locked events
-- **Starts-on date picker**: HTML date input shown for Weekly/Monthly cadence
-- Cancel / OK footer buttons
+- **Account tab**: Channels section (Email/Slack toggles), email address input, Slack channel picker, Delivery section
+- **Personal tab**: Delivery section only (no Channels -- email is the only option)
+- Cancel / OK footer buttons with validation
 
 ### ConfigSummary (row badges)
 - Cadence badge with color coding:
@@ -56,16 +70,16 @@ This is a standalone React JSX mockup rendered client-side via Babel. It is not 
   - Weekly: amber
   - Monthly: gray
 - Channel badges showing icon + label
-- Slack badge includes channel name (e.g. "Slack #product")
-- Muted channel badge: amber background with small mute icon
-- Muted event: shows "Muted" text in amber instead of badges
+- Account tab: Email badge includes address (e.g. "Email anyemail@example.com")
+- Account tab: Slack badge includes channel name (e.g. "Slack #product")
+- Personal tab when muted: shows "Muted" text in amber instead of badges
 
 ### NotificationRow
-- Event label (strikethrough + gray when muted, dimmed opacity)
+- Event label (normal weight, not affected by mute state)
 - ConfigSummary badges
-- Three action buttons:
+- Action buttons:
   - `...` menu: opens ConfigPopover
-  - Bell icon: toggles per-row mute (amber when active, slash-through icon)
+  - Bell icon (Personal tab only): toggles per-row mute (amber when active)
   - Trash icon: removes the event row (red on hover)
 
 ### ToggleSwitch
@@ -76,7 +90,7 @@ This is a standalone React JSX mockup rendered client-side via Babel. It is not 
 
 ## Data Model
 
-### Event Definition (ALL_EVENTS)
+### Event Definition (ALL_EVENTS -- shared across both tabs)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -92,18 +106,18 @@ This is a standalone React JSX mockup rendered client-side via Babel. It is not 
 | `channels` | string[] | `["email"]` | Active channels for this event |
 | `cadence` | string | `"immediate"` | Delivery cadence |
 | `cadenceLocked` | boolean | `false` | Whether cadence is fixed |
-| `slackChannels` | string[] | `[]` | Selected Slack channel(s) |
+| `slackChannels` | string[] | `[]` | Selected Slack channel(s) (Account tab) |
+| `emailAddress` | string | `""` or `"anyemail@example.com"` | Email address (Account tab; pre-filled on Add) |
 | `startsOn` | string | `""` | ISO date for digest start |
-| `muted` | boolean | `false` | Per-event mute state |
+| `muted` | boolean | `false` | Per-event mute state (Personal tab) |
 
-### Global State
+### Per-Tab State
 
 | State | Type | Description |
 |-------|------|-------------|
 | `addedIds` | string[] | Event IDs the user has added (starts empty) |
 | `selectedEvent` | string | Currently selected event in dropdown |
-| `muteAll` | boolean | Global mute toggle |
-| `globalChannels` | `{email: bool, slack: bool}` | Channel-level mute state |
+| `muteAll` | boolean | Global mute toggle (Personal tab only) |
 | `openPopover` | string or null | ID of event with open config popover |
 | `saved` | boolean | Flash state for save confirmation |
 
@@ -147,63 +161,56 @@ This is a standalone React JSX mockup rendered client-side via Babel. It is not 
 ## Interaction Behaviors
 
 ### Adding an Event
-1. User selects an event from the "Notify me when" dropdown
+1. User selects an event from the dropdown
 2. Add button enables (turns purple)
 3. Clicking Add creates a row with defaults: Email channel, Immediate cadence
-4. Dropdown resets to empty, Add button disables
-5. Event is removed from dropdown options
+4. Account tab: row immediately shows default email address `anyemail@example.com`
+5. Dropdown resets, event removed from options
 
 ### Removing an Event
 1. Click trash icon on a row
-2. Row is removed, event config resets to defaults
+2. Row removed, config resets to defaults
 3. Event reappears in the dropdown
 
 ### Configuring an Event
-1. Click `...` button on a row to open the config popover
-2. Toggle channels, pick Slack channel, select cadence, set starts-on date
-3. Click OK to save (validates Slack channel is selected if Slack enabled)
-4. Click Cancel or click outside to discard changes
+1. Click `...` button to open the config popover
+2. Account tab: toggle channels, enter email address, pick Slack channel, select cadence
+3. Personal tab: select cadence only (email is the only channel)
+4. Click OK to save (validates required fields on Account tab)
+5. Click Cancel or click outside to discard
 
-### Muting a Single Event
+### Muting a Single Event (Personal tab only)
 1. Click bell icon on a row
-2. Row dims (55% opacity), name gets strikethrough
-3. Badges replaced with amber "Muted" text
-4. Bell icon shows slash-through variant with amber styling
+2. "Muted" badge replaces channel/cadence badges
+3. Bell icon shows slash-through variant with amber styling
+4. Row text and controls remain at full opacity
 5. Click again to unmute
 
-### Mute All
+### Mute All (Personal tab only)
 1. Toggle the "Mute all notifications" switch
-2. All rows dim to 50% opacity
-3. Dropdown and Add button become non-interactive
-4. Per-event `...` buttons are disabled
-5. Toggle off to restore
-
-### Mute Channel
-1. Click "Mute Channel" dropdown
-2. Check/uncheck Email or Slack
-3. Muted channels show mute icon on row badges (amber styling)
-4. Channel selection in popover remains fully functional -- only the badge indicator changes
-5. Mute Channel button turns amber when any channel is muted
+2. All rows show muted state (same as clicking each bell icon)
+3. Dropdown, Add button, and all controls remain fully interactive
+4. Toggle off to restore
 
 ---
 
 ## Visual States Summary
 
-| State | Row Opacity | Name Style | Badges | Bell Icon |
-|-------|------------|------------|--------|-----------|
-| Normal | 100% | Bold black | Cadence + Channel pills | Gray outline bell |
-| Muted (per-row) | 55% | Strikethrough gray | "Muted" amber text | Amber bell with slash |
-| Muted All | 50% (container) | Unchanged | Unchanged | Unchanged (disabled) |
-| Channel Muted | 100% | Unchanged | Mute icon + amber bg on affected channel | Unchanged |
+| State | Name Style | Badges | Bell Icon | Controls |
+|-------|------------|--------|-----------|----------|
+| Normal | Bold black | Cadence + Channel pills | Gray outline bell | Fully interactive |
+| Muted (per-row) | Bold black (unchanged) | "Muted" amber text | Amber bell with slash | Fully interactive |
+| Muted All | Bold black (unchanged) | "Muted" amber text on all | Amber bell with slash | Fully interactive |
 
 ---
 
 ## Technical Notes
 
 - **Runtime**: React 18 + ReactDOM UMD via CDN, Babel standalone for in-browser JSX transpilation
-- **No build step**: `index.html` fetches and transpiles `notification-center-mockup.jsx` at runtime
-- **Portals**: ConfigPopover renders via `ReactDOM.createPortal` to `document.body` to escape scroll container overflow clipping
-- **Popover positioning**: Computed from anchor button's `getBoundingClientRect()`, updates on scroll/resize, flips upward when insufficient space below
-- **Cache busting**: JSX fetch URL includes `?v=` + timestamp to prevent stale browser cache
-- **Styling**: All inline styles, no CSS files. Color palette uses Tailwind-inspired tokens.
-- **Hosted at**: Vercel (auto-deploys from `main` branch of `appcues/chrisb-playground`, root directory `notifications-pc`)
+- **No build step**: `index.html` fetches and transpiles `notification-center-mockup.js` at runtime
+- **Dynamic base path**: Fetch URL uses `window.location.pathname` to resolve correctly on both local dev and Vercel
+- **Portals**: ConfigPopover renders via `ReactDOM.createPortal` to `document.body` with explicit `fontFamily` (portal doesn't inherit from parent tree)
+- **Popover positioning**: Computed from anchor's `getBoundingClientRect()`, right-aligned to button, prefers below/flips above, clamped to viewport bounds, scrollable if content exceeds viewport height
+- **Cache busting**: JS fetch URL includes `?v=` + timestamp to prevent stale browser cache
+- **Styling**: All inline styles, no CSS files. System font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`).
+- **Hosted at**: Vercel at `/notifications` path (auto-deploys from `main` branch of `appcues/chrisb-playground`, root directory `notifications-pc`)
