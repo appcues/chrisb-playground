@@ -244,6 +244,7 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         left: pos ? pos.left : -9999,
         visibility: pos ? "visible" : "hidden",
         width: 300,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         background: "#fff",
         borderRadius: 12,
         border: "1px solid #e5e7eb",
