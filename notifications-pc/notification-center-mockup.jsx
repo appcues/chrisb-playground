@@ -835,7 +835,7 @@ export default function NotificationCenter() {
             <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", margin: 0 }}>Notification Preferences</h1>
           </div>
           <p style={{ color: "#6b7280", fontSize: 15, margin: 0, lineHeight: 1.5 }}>
-            Choose what to get notified about, pick your channels, and set the delivery cadence.
+            Configure notification preferences and delivery cadence.
           </p>
         </div>
 
