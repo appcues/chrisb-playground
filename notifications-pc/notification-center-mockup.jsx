@@ -160,13 +160,13 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
   const [slackError, setSlackError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const popoverRef = useRef(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState(null);
 
   useEffect(() => {
     function updatePos() {
       if (anchorRef.current) {
         const rect = anchorRef.current.getBoundingClientRect();
-        const popH = 480;
+        const popH = popoverRef.current ? popoverRef.current.offsetHeight : 400;
         const spaceBelow = window.innerHeight - rect.bottom - 8;
         if (spaceBelow < popH) {
           setPos({ top: rect.top - popH - 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
@@ -175,7 +175,8 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         }
       }
     }
-    updatePos();
+    // Delay first position calc to allow popover to render and measure
+    requestAnimationFrame(updatePos);
     window.addEventListener("scroll", updatePos, true);
     window.addEventListener("resize", updatePos);
     return () => {
@@ -239,8 +240,9 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
       ref={popoverRef}
       style={{
         position: "absolute",
-        top: pos.top,
-        left: pos.left,
+        top: pos ? pos.top : -9999,
+        left: pos ? pos.left : -9999,
+        visibility: pos ? "visible" : "hidden",
         width: 300,
         background: "#fff",
         borderRadius: 12,
