@@ -510,14 +510,14 @@ function NotificationRow({
         borderBottom: isLast ? "none" : "1px solid #f3f4f6",
         transition: "background 150ms",
         position: "relative",
-        opacity: isMuted ? 0.55 : 1,
+        opacity: 1,
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "#fafbfc")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     >
       {/* Event name */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: isMuted ? "#9ca3af" : "#111827", textDecoration: isMuted ? "line-through" : "none" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
           {event.label}
         </div>
       </div>
