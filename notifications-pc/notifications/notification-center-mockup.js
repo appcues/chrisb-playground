@@ -167,12 +167,28 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
       if (anchorRef.current) {
         const rect = anchorRef.current.getBoundingClientRect();
         const popH = popoverRef.current ? popoverRef.current.offsetHeight : 400;
-        const spaceBelow = window.innerHeight - rect.bottom - 8;
-        if (spaceBelow < popH) {
-          setPos({ top: rect.top - popH - 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
+        const popW = 300;
+        const margin = 8;
+
+        // Horizontal: right-align popover to anchor button
+        let left = rect.right - popW + window.scrollX;
+        if (left < margin) left = margin;
+
+        // Vertical: prefer below, fall back to above, then clamp
+        let top;
+        const spaceBelow = window.innerHeight - rect.bottom - margin;
+        const spaceAbove = rect.top - margin;
+
+        if (spaceBelow >= popH) {
+          top = rect.bottom + margin + window.scrollY;
+        } else if (spaceAbove >= popH) {
+          top = rect.top - popH - margin + window.scrollY;
         } else {
-          setPos({ top: rect.bottom + 8 + window.scrollY, left: rect.right - 300 + window.scrollX });
+          // Not enough space either way — position below and let it scroll, clamped to viewport
+          top = Math.max(margin + window.scrollY, window.innerHeight - popH - margin + window.scrollY);
         }
+
+        setPos({ top, left });
       }
     }
     // Delay first position calc to allow popover to render and measure
@@ -251,7 +267,8 @@ function ConfigPopover({ item, onSave, onClose, anchorRef, tabType }) {
         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
         zIndex: 9999,
         padding: 0,
-        overflow: "hidden",
+        maxHeight: "calc(100vh - 16px)",
+        overflowY: "auto",
       }}
     >
       {/* Channels section -- hidden on Personal tab (email only) */}

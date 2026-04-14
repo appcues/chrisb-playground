@@ -14,8 +14,10 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    // Load the JSX file at runtime, strip import/export, and render
-    fetch('/notifications/notification-center-mockup.js?v=' + Date.now())
+    // Load the JS file at runtime, strip import/export, and render
+    // Use base path from current page location so it works locally and on Vercel
+    const basePath = window.location.pathname.replace(/\/?(index\.html)?$/, '');
+    fetch(basePath + '/notification-center-mockup.js?v=' + Date.now())
       .then(r => r.text())
       .then(code => {
         // Make React hooks available as globals
